@@ -14,38 +14,16 @@ except ImportError:
     from utils import *
 
 
-OBJECTS = {
-    "book": {"dims": [4, 4, 2], "stack": True},
-    "penstand": {"dims": [2, 2, 4], "stack": True},
-    "bottle": {"dims": [2, 2, 6], "stack": False},
-    "pen": {"dims": [1, 1, 4], "stack": False},
-    "pencil": {"dims": [1, 1, 6], "stack": False},
-    "eraser": {"dims": [2, 1, 1], "stack": False},
-    "powerbank": {"dims": [4, 2, 1], "stack": False},
-    "mobile": {"dims": [4, 2, 1], "stack": False},
-    "laptop": {"dims": [6, 4, 1], "stack": True},
-    "monitor": {"dims": [6, 4, 2], "stack": False},
-    "keyboard": {"dims": [6, 2, 1], "stack": False},
-    "mouse": {"dims": [4, 2, 1], "stack": False},
-    "headphones": {"dims": [4, 4, 2], "stack": False},
-    "charger": {"dims": [2, 2, 1], "stack": False},
-    "notebook": {"dims": [4, 4, 1], "stack": True},
-    "folder": {"dims": [4, 4, 1], "stack": True},
-    "backpack": {"dims": [6, 4, 2], "stack": False},
-    "pouch": {"dims": [4, 4, 2], "stack": False},
-}
-
-
 class AppEnvironment(Environment):
 
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self):
-        self._state = State(episode_id=str(uuid4()), step_count=0)
+        self._state = self._new_state()
         self._reset_count = 0
 
-    def reset(self) -> AppObservation:
-        self._state = AppState(
+    def _new_state(self) -> AppState:
+        return AppState(
             episode_id=str(uuid4()),
             step_count=0,
             currentGrid=initGrid(),
@@ -57,14 +35,22 @@ class AppEnvironment(Environment):
             ObjectsPresent={},
         )
 
+    def reset(self) -> AppObservation:
+        self._state = self._new_state()
+
         return AppObservation(
             currentGrid=self._state.currentGrid,
             positions=self._state.ObjectsPresent,
             objectsLeft=self._state.objectsLeft,
             objectsFound=self._state.objectsFound,
+            reward=self._state.reward,
+            isDone=self._state.isDone,
         )
 
     def step(self, action: AppAction) -> AppObservation:
+        if not isinstance(self._state, AppState):
+            self._state = self._new_state()
+
         self._state.step_count += 1
 
         reward = 0.0
@@ -86,9 +72,10 @@ class AppEnvironment(Environment):
             positions=self._state.ObjectsPresent,
             objectsLeft=self._state.objectsLeft,
             objectsFound=self._state.objectsFound,
+            reward=self._state.reward,
+            isDone=self._state.isDone,
         )
 
     @property
     def state(self) -> State:
-        
         return self._state

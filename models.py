@@ -24,7 +24,7 @@ class AppObservation(Observation):
         default_factory=list,
         description="Current placement of the objects in a 3D grid",
     )
-    postions: Dict[str, Tuple[int, int, int, bool]] = Field(
+    positions: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict,
         description="Dictionary of objects with their positions in the environment",
     )
@@ -50,9 +50,9 @@ class AppState(State):
         description="Initial state of the environment with unorganised objects",
     )
 
-    weightedGrid: List[List[List[int]]] = Field(
+    weightedGrid: List[List[List[float]]] = Field(
         default_factory=list,
-        description="Initial state of the environment with unorganised objects",
+        description="Weighted grid used when scoring placements",
     )
 
     objectsLeft: List[str] = Field(
@@ -68,4 +68,7 @@ class AppState(State):
     )
     isDone: bool = Field(default=False, description="Whether the episode has ended")
 
-    ObjectsPresent: Dict[str, Tuple[int, int, int, bool]]
+    ObjectsPresent: Dict[str, Tuple[int, int, int, bool]] = Field(
+        default_factory=dict,
+        description="Placed objects and their current positions in the environment",
+    )

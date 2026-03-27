@@ -4,12 +4,11 @@ from typing import Dict
 
 from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
-from openenv.core.env_server.types import State
 
-from .models import AppAction, AppObservation
+from .models import AppAction, AppObservation, AppState
 
 
-class AppEnv(EnvClient[AppAction, AppObservation, State]):
+class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
 
     def _step_payload(self, action: AppAction) -> Dict:
 
@@ -24,7 +23,7 @@ class AppEnv(EnvClient[AppAction, AppObservation, State]):
         obs_data = payload.get("observation", {})
         observation = AppObservation(
             currentGrid=obs_data.get("currentGrid", []),
-            postions=obs_data.get("postions", {}),
+            positions=obs_data.get("positions", {}),
             objectsLeft=obs_data.get("objectsLeft", []),
             objectsFound=obs_data.get("objectsFound", []),
             reward=obs_data.get("reward", 0.0),
@@ -34,12 +33,14 @@ class AppEnv(EnvClient[AppAction, AppObservation, State]):
         return StepResult(
             observation=observation,
             reward=payload.get("reward"),
-            done=payload.get("isDone", False),
+            done=payload.get("done", obs_data.get("isDone", False)),
         )
 
-    def _parse_state(self, payload: Dict) -> State:
+    def _parse_state(self, payload: Dict) -> AppState:
 
-        return State(
+        return AppState(
+            episode_id=payload.get("episode_id"),
+            step_count=payload.get("step_count", 0),
             currentGrid=payload.get("currentGrid", []),
             weightedGrid=payload.get("weightedGrid", []),
             reward=payload.get("reward", 0.0),

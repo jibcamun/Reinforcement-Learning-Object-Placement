@@ -1,9 +1,31 @@
 from matplotlib.pylab import randint
-from numpy import ones, zeros, random, shape
+from numpy import ones, zeros, random
 from openenv.core.env_server.types import State
 from sklearn.metrics import mean_squared_error as MSE
 
 random.seed(123)
+
+
+OBJECTS = {
+    "book": {"dims": [4, 4, 2], "stack": True},
+    "penstand": {"dims": [2, 2, 4], "stack": True},
+    "bottle": {"dims": [2, 2, 6], "stack": False},
+    "pen": {"dims": [1, 1, 4], "stack": False},
+    "pencil": {"dims": [1, 1, 6], "stack": False},
+    "eraser": {"dims": [2, 1, 1], "stack": False},
+    "powerbank": {"dims": [4, 2, 1], "stack": False},
+    "mobile": {"dims": [4, 2, 1], "stack": False},
+    "laptop": {"dims": [6, 4, 1], "stack": True},
+    "monitor": {"dims": [6, 4, 2], "stack": False},
+    "keyboard": {"dims": [6, 2, 1], "stack": False},
+    "mouse": {"dims": [4, 2, 1], "stack": False},
+    "headphones": {"dims": [4, 4, 2], "stack": False},
+    "charger": {"dims": [2, 2, 1], "stack": False},
+    "notebook": {"dims": [4, 4, 1], "stack": True},
+    "folder": {"dims": [4, 4, 1], "stack": True},
+    "backpack": {"dims": [6, 4, 2], "stack": False},
+    "pouch": {"dims": [4, 4, 2], "stack": False},
+}
 
 
 def initDimentions(obj):
@@ -37,37 +59,53 @@ def place(objects, state):
     reward = 0.0
     totalObjs = len(objects)
     reward_per_obj_placed = 90.0 / totalObjs
-    for obj, pos in objects.items():
+    for obj_name, pos in objects.items():
+        obj = OBJECTS.get(obj_name)
+        if obj is None:
+            reward -= reward_per_obj_placed
+            continue
+
         objGrid = initDimentions(obj)
+        placement_failed = False
 
         for i in range(len(objGrid)):
             for j in range(len(objGrid[0])):
                 for k in range(len(objGrid[0][0])):
                     if (
-                        pos[0] + i > len(dims) - 1
-                        and pos[1] + j > len(dims[0]) - 1
-                        and pos[2] + k > len(dims[0][0]) - 1
+                        pos[0] + i >= len(dims)
+                        or pos[1] + j >= len(dims[0])
+                        or pos[2] + k >= len(dims[0][0])
                     ):
                         reward -= reward_per_obj_placed
+                        placement_failed = True
+                        break
 
-                    if dims[pos[0] + i][pos[1] + k][pos[2] + j] > 0 and pos[3] == False:
+                    if dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0 and pos[3] == False:
                         reward -= reward_per_obj_placed
+                        placement_failed = True
                         break
                     elif (
-                        dims[pos[0] + i][pos[1] + k][pos[2] + j] > 0 and pos[3] == True
+                        dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0 and pos[3] == True
                     ):
-                        dims[pos[0] + i][pos[1] + k][pos[2] + j] += 1
+                        dims[pos[0] + i][pos[1] + j][pos[2] + k] += 1
                         reward += (
-                            weight[pos[0] + i][pos[1] + k][pos[2] + j]
+                            weight[pos[0] + i][pos[1] + j][pos[2] + k]
                             * reward_per_obj_placed
                         )
                         break
                     else:
-                        dims[pos[0] + i][pos[1] + k][pos[2] + j] = 1
+                        dims[pos[0] + i][pos[1] + j][pos[2] + k] = 1
                         reward += (
                             reward_per_obj_placed
-                            * weight[pos[0] + i][pos[1] + k][pos[2] + j]
+                            * weight[pos[0] + i][pos[1] + j][pos[2] + k]
                         )
+                if placement_failed:
+                    break
+            if placement_failed:
+                break
+
+        if not placement_failed:
+            state.ObjectsPresent[obj_name] = pos
 
     return reward
 
@@ -75,15 +113,15 @@ def place(objects, state):
 def findobject(objects, state):
     reward = 0.0
     objs = []
-    for (obj_found, pos_found), (obj_real, pos_real) in zip(
-        objects.items(), state.ObjectsPresent.items()
-    ):
+    for obj_found, pos_found in objects.items():
+        pos_real = state.ObjectsPresent.get(obj_found)
+        if pos_real is None:
+            reward -= 10.0
+            continue
+
         if pos_found == pos_real:
-            if obj_found == obj_real:
-                reward += 10.0
-                objs.append(obj_found)
-            else:
-                reward -= 10.0
+            reward += 10.0
+            objs.append(obj_found)
         else:
             rmse = MSE(pos_real[:3], pos_found[:3])
             reward -= rmse
