@@ -7,7 +7,7 @@ class AppAction(Action):
     """Action for the App environment"""
 
     placement: Dict[str, Tuple[int, int, int, bool]] = Field(
-        default_factory=list, description="Placement of the object in a 3D grid"
+        default_factory=dict, description="Placement of the object in a 3D grid"
     )
     isSegmentation: bool = Field(
         default=True, description="Whether the model is segmenting the objects"
@@ -29,12 +29,12 @@ class AppObservation(Observation):
         description="Dictionary of objects with their positions in the environment",
     )
     objectsLeft: List[str] = Field(
-        default_factory=dict,
-        description="Dictionary of unorganised objects left in the environment",
+        default_factory=list,
+        description="List of unorganised objects left in the environment",
     )
     objectsFound: List[str] = Field(
-        default_factory=dict,
-        description="Dictionary of objects found in the environment",
+        default_factory=list,
+        description="List of objects found in the environment",
     )
     reward: float = Field(
         default=0.0, description="Reward received after taking the action"
@@ -56,12 +56,12 @@ class AppState(State):
     )
 
     objectsLeft: List[str] = Field(
-        default_factory=dict,
-        description="Dictionary of unorganised objects left in the environment",
+        default_factory=list,
+        description="List of unorganised objects left in the environment",
     )
     objectsFound: List[str] = Field(
-        default_factory=dict,
-        description="Dictionary of objects found in the environment",
+        default_factory=list,
+        description="List of objects found in the environment",
     )
     reward: float = Field(
         default=0.0, description="Reward received after taking the action"

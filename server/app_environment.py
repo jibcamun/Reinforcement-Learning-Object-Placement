@@ -72,14 +72,14 @@ class AppEnvironment(Environment):
         if action.placement:
             reward += place(action.placement, self._state)
 
-        if action.find_objects:
+        if action.findObjects:
             reward += findobject(action.findObjects, self._state)
 
         if len(self._state.objectsLeft) == 0:
             self._state.isDone = True
             reward += 100
 
-        self._state.reward += reward
+        self._state.reward += reward/(10**self._state.step_count)
 
         return AppObservation(
             currentGrid=self._state.currentGrid,
@@ -90,10 +90,5 @@ class AppEnvironment(Environment):
 
     @property
     def state(self) -> State:
-        """
-        Get the current environment state.
-
-        Returns:
-            Current State with episode_id and step_count
-        """
+        
         return self._state

@@ -10,82 +10,41 @@ from .models import AppAction, AppObservation
 
 
 class AppEnv(EnvClient[AppAction, AppObservation, State]):
-    """
-    Client for the App Environment.
-
-    This client maintains a persistent WebSocket connection to the environment server,
-    enabling efficient multi-step interactions with lower latency.
-    Each client instance has its own dedicated environment session on the server.
-
-    Example:
-        >>> # Connect to a running server
-        >>> with AppEnv(base_url="http://localhost:8000") as client:
-        ...     result = client.reset()
-        ...     print(result.observation.echoed_message)
-        ...
-        ...     result = client.step(AppAction(message="Hello!"))
-        ...     print(result.observation.echoed_message)
-
-    Example with Docker:
-        >>> # Automatically start container and connect
-        >>> client = AppEnv.from_docker_image("app-env:latest")
-        >>> try:
-        ...     result = client.reset()
-        ...     result = client.step(AppAction(message="Test"))
-        ... finally:
-        ...     client.close()
-    """
 
     def _step_payload(self, action: AppAction) -> Dict:
-        """
-        Convert AppAction to JSON payload for step message.
 
-        Args:
-            action: AppAction instance
-
-        Returns:
-            Dictionary representation suitable for JSON encoding
-        """
         return {
-            "message": action.message,
+            "placement": action.placement,
+            "isSegmentation": action.isSegmentation,
+            "findObjects": action.findObjects,
         }
 
     def _parse_result(self, payload: Dict) -> StepResult[AppObservation]:
-        """
-        Parse server response into StepResult[AppObservation].
 
-        Args:
-            payload: JSON response data from server
-
-        Returns:
-            StepResult with AppObservation
-        """
         obs_data = payload.get("observation", {})
         observation = AppObservation(
-            echoed_message=obs_data.get("echoed_message", ""),
-            message_length=obs_data.get("message_length", 0),
-            done=payload.get("done", False),
-            reward=payload.get("reward"),
-            metadata=obs_data.get("metadata", {}),
+            currentGrid=obs_data.get("currentGrid", []),
+            postions=obs_data.get("postions", {}),
+            objectsLeft=obs_data.get("objectsLeft", []),
+            objectsFound=obs_data.get("objectsFound", []),
+            reward=obs_data.get("reward", 0.0),
+            isDone=obs_data.get("isDone", False),
         )
 
         return StepResult(
             observation=observation,
             reward=payload.get("reward"),
-            done=payload.get("done", False),
+            done=payload.get("isDone", False),
         )
 
     def _parse_state(self, payload: Dict) -> State:
-        """
-        Parse server response into State object.
 
-        Args:
-            payload: JSON response from state request
-
-        Returns:
-            State object with episode_id and step_count
-        """
         return State(
-            episode_id=payload.get("episode_id"),
-            step_count=payload.get("step_count", 0),
+            currentGrid=payload.get("currentGrid", []),
+            weightedGrid=payload.get("weightedGrid", []),
+            reward=payload.get("reward", 0.0),
+            isDone=payload.get("isDone", False),
+            objectsLeft=payload.get("objectsLeft", []),
+            objectsFound=payload.get("objectsFound", []),
+            ObjectsPresent=payload.get("ObjectsPresent", {}),
         )

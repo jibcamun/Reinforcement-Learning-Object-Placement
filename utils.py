@@ -44,9 +44,9 @@ def place(objects, state):
             for j in range(len(objGrid[0])):
                 for k in range(len(objGrid[0][0])):
                     if (
-                        pos[0] + i > len(dims)
-                        and pos[1] + j > len(dims[0])
-                        and pos[2] + k > len(dims[0][0])
+                        pos[0] + i > len(dims) - 1
+                        and pos[1] + j > len(dims[0]) - 1
+                        and pos[2] + k > len(dims[0][0]) - 1
                     ):
                         reward -= reward_per_obj_placed
 
@@ -88,7 +88,7 @@ def findobject(objects, state):
             rmse = MSE(pos_real[:3], pos_found[:3])
             reward -= rmse
 
-        if pos_real[3] != pos_real[3]:
+        if pos_found[3] != pos_real[3]:
             reward -= 5.0
         else:
             reward += 5.0
