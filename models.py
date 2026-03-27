@@ -1,9 +1,6 @@
-"""
-Data models for the App Environment.
-"""
-
 from openenv.core.env_server.types import Action, Observation, State
-from pydantic import Field, List, Dict, Tuple
+from pydantic import Field
+from typing import List, Dict, Tuple
 
 
 class AppAction(Action):
@@ -71,4 +68,4 @@ class AppState(State):
     )
     isDone: bool = Field(default=False, description="Whether the episode has ended")
 
-    ObjectsPresent: Dict[str, List[int, int, int, bool]]
+    ObjectsPresent: Dict[str, Tuple[int, int, int, bool]]

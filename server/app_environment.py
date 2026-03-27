@@ -1,7 +1,3 @@
-"""
-App Environment Implementation.
-"""
-
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
@@ -12,7 +8,10 @@ try:
 except ImportError:
     from models import AppAction, AppObservation, AppState
 
-from utils import *
+try:
+    from ..utils import *
+except ImportError:
+    from utils import *
 
 
 OBJECTS = {

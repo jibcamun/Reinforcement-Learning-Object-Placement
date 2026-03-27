@@ -1,13 +1,13 @@
 from matplotlib.pylab import randint
 from numpy import ones, zeros, random, shape
 from openenv.core.env_server.types import State
-from app_environment import OBJECTS
 from sklearn.metrics import mean_squared_error as MSE
+
+random.seed(123)
 
 
 def initDimentions(obj):
     dims = obj.get("dims")
-
     if dims is None:
         return []
 
@@ -20,11 +20,11 @@ def initGrid():
 
 
 def initWeightedGrid():
-    grid = random.uniform(0, 1, shape)
+    grid = random.uniform(0, 1, (randint(5, 11), randint(5, 11), randint(5, 11)))
 
-    x_mid = shape[0] // 2
-    x_span = shape[0] // 4
-    y_front = shape[1] // 3
+    x_mid = grid.shape[0] // 2
+    x_span = grid.shape[0] // 4
+    y_front = grid.shape[1] // 3
 
     grid[x_mid - x_span : x_mid + x_span, :y_front, :] *= 0.2
 
@@ -75,7 +75,7 @@ def place(objects, state):
 def findobject(objects, state):
     reward = 0.0
     objs = []
-    for obj_found, pos_found, obj_real, pos_real in zip(
+    for (obj_found, pos_found), (obj_real, pos_real) in zip(
         objects.items(), state.ObjectsPresent.items()
     ):
         if pos_found == pos_real:

@@ -36,14 +36,13 @@ except Exception as e:  # pragma: no cover
     ) from e
 
 try:
-    from ..models import AppAction, AppObservation
-    from .app_environment import AppEnvironment
+    from app.models import AppAction, AppObservation
+    from app.server.app_environment import AppEnvironment
 except ModuleNotFoundError:
     from models import AppAction, AppObservation
     from server.app_environment import AppEnvironment
 
 
-# Create the app with web interface and README integration
 app = create_app(
     AppEnvironment,
     AppAction,
