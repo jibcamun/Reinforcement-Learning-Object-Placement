@@ -52,6 +52,12 @@ class AppState(State):
         default_factory=list,
         description="Initial state of the environment with unorganised objects",
     )
+
+    weightedGrid: List[List[List[int]]] = Field(
+        default_factory=list,
+        description="Initial state of the environment with unorganised objects",
+    )
+
     objectsLeft: List[str] = Field(
         default_factory=dict,
         description="Dictionary of unorganised objects left in the environment",
@@ -64,4 +70,5 @@ class AppState(State):
         default=0.0, description="Reward received after taking the action"
     )
     isDone: bool = Field(default=False, description="Whether the episode has ended")
+
     ObjectsPresent: Dict[str, List[int, int, int, bool]]

@@ -38,73 +38,55 @@ OBJECTS = {
 
 
 class AppEnvironment(Environment):
-    """
-    A simple echo environment that echoes back messages.
-
-    This environment is designed for testing the HTTP server infrastructure.
-    It maintains minimal state and simply echoes back whatever message it receives.
-
-    Example:
-        >>> env = AppEnvironment()
-        >>> obs = env.reset()
-        >>> print(obs.echoed_message)  # "App environment ready!"
-        >>>
-        >>> obs = env.step(AppAction(message="Hello"))
-        >>> print(obs.echoed_message)  # "Hello"
-        >>> print(obs.message_length)  # 5
-    """
 
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self):
-        """Initialize the app environment."""
         self._state = State(episode_id=str(uuid4()), step_count=0)
         self._reset_count = 0
 
     def reset(self) -> AppObservation:
-        """
-        Reset the environment.
-
-        Returns: AppObservation
-        """
-        self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._reset_count += 1
+        self._state = AppState(
+            episode_id=str(uuid4()),
+            step_count=0,
+            currentGrid=initGrid(),
+            weightedGrid=initWeightedGrid(),
+            objectsLeft=list(OBJECTS.keys()),
+            objectsFound=[],
+            reward=0.0,
+            isDone=False,
+            ObjectsPresent={},
+        )
 
         return AppObservation(
-            echoed_message="App environment ready!",
-            message_length=0,
-            done=False,
-            reward=0.0,
+            currentGrid=self._state.currentGrid,
+            positions=self._state.ObjectsPresent,
+            objectsLeft=self._state.objectsLeft,
+            objectsFound=self._state.objectsFound,
         )
 
     def step(self, action: AppAction) -> AppObservation:
-        """
-        Execute a step in the environment by echoing the message.
-
-        Args:
-            action: AppAction
-
-        Returns:
-            AppObservation
-        """
-
         self._state.step_count += 1
 
-        if action.isSegmentation and self._state.step_count == 1:
-            reward = 10
+        reward = 0.0
 
         if action.placement:
-            place(action.placement, self._state)
-        elif action.findobjects:
-            findobject(action, self._state)
+            reward += place(action.placement, self._state)
+
+        if action.find_objects:
+            reward += findobject(action.findObjects, self._state)
+
+        if len(self._state.objectsLeft) == 0:
+            self._state.isDone = True
+            reward += 100
+
+        self._state.reward += reward
 
         return AppObservation(
-            currentGrid=[],
-            postions={},
-            objectsLeft=[],
-            objectsFound=[],
-            reward=reward,
-            isDone=False,
+            currentGrid=self._state.currentGrid,
+            positions=self._state.ObjectsPresent,
+            objectsLeft=self._state.objectsLeft,
+            objectsFound=self._state.objectsFound,
         )
 
     @property
