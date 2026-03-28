@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
-from openenv.core.env_server.types import State
 
 try:
     from ..models import AppAction, AppObservation, AppState
@@ -65,7 +64,7 @@ class AppEnvironment(Environment):
             self._state.isDone = True
             reward += 100
 
-        self._state.reward += reward/(10**self._state.step_count)
+        self._state.reward += reward / (10 ** self._state.step_count)
 
         return AppObservation(
             currentGrid=self._state.currentGrid,
@@ -77,5 +76,5 @@ class AppEnvironment(Environment):
         )
 
     @property
-    def state(self) -> State:
-        return self._state
+    def state(self) -> dict:
+        return self._state.model_dump()
