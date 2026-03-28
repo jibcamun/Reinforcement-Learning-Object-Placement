@@ -1,5 +1,7 @@
+from cycler import K
 from matplotlib.pylab import randint
 from numpy import ones, zeros, random
+from openai import NoneType
 from openenv.core.env_server.types import State
 from sklearn.metrics import mean_squared_error as MSE
 
@@ -27,6 +29,27 @@ OBJECTS = {
     "pouch": {"dims": [4, 4, 2], "stack": False},
 }
 
+OBJECT_NAMES = [
+    "book",
+    "penstand",
+    "bottle",
+    "pen",
+    "pencil",
+    "eraser",
+    "powerbank",
+    "mobile",
+    "laptop",
+    "monitor",
+    "keyboard",
+    "mouse",
+    "headphones",
+    "charger",
+    "notebook",
+    "folder",
+    "backpack",
+    "pouch",
+]
+
 
 def initDimentions(obj):
     dims = obj.get("dims")
@@ -37,8 +60,64 @@ def initDimentions(obj):
 
 
 def initGrid():
-    grid = zeros((randint(5, 11), randint(5, 11), randint(5, 11)), dtype=int).tolist()
-    return grid
+    sizeX, sizeY, sizeZ = randint(8, 12), randint(8, 12), randint(8, 12)
+    grid = zeros((sizeX, sizeY, sizeZ), dtype=int).tolist()
+
+    numObjs = randint(3, len(OBJECT_NAMES) + 1)
+    chosenNames = random.choice(OBJECT_NAMES, size=numObjs, replace=False)
+
+    placed = {}
+
+    for name in chosenNames:
+        obj = OBJECTS.get(name)
+
+        dimX, dimY, dimZ = obj["dims"]
+
+        if dimX > sizeX or dimY > sizeY or dimZ > sizeZ:
+            continue
+
+        isPlaced = False
+        tryPlaced = 0
+
+        while not isPlaced and tryPlaced < 100:
+            posX = randint(0, sizeX - dimX + 1)
+            posY = randint(0, sizeY - dimY + 1)
+            posZ = 0
+
+            canPlace = True
+            for i in range(dimX):
+                for j in range(dimY):
+                    for k in range(dimZ):
+                        if (
+                            grid[posX + i][posY + j][posZ + k] != 0
+                            and obj["stack"] == False
+                        ):
+                            canPlace = False
+                            break
+                        else:
+                            canPlace = True
+                    if not canPlace:
+                        break
+                if not canPlace:
+                    break
+
+            if canPlace:
+                for i in range(dimX):
+                    for j in range(dimY):
+                        for k in range(dimZ):
+                            if (
+                                obj["stack"]
+                                and grid[posX + i][posY + j][posZ + k] > 0
+                                and posZ + k + 1 < sizeZ
+                            ):
+                                grid[posX + i][posY + j][posZ + k + 1] += 1
+                            else:
+                                grid[posX + i][posY + j][posZ + k] += 1
+
+            placed[name] = (posX, posY, posZ, obj["stack"])
+            isPlaced = True
+
+    return (grid, placed)
 
 
 def initWeightedGrid():
@@ -84,15 +163,22 @@ def place(objects, state):
                         reward -= reward_per_obj_placed
                         placement_failed = True
                         break
+
                     elif (
                         dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0 and pos[3] == True
                     ):
-                        dims[pos[0] + i][pos[1] + j][pos[2] + k] += 1
-                        reward += (
-                            weight[pos[0] + i][pos[1] + j][pos[2] + k]
-                            * reward_per_obj_placed
-                        )
+                        if pos[2] + k + 1 <= len(objGrid[0][0]):
+                            dims[pos[0] + i][pos[1] + j][pos[2] + k + 1] += 1
+                            reward += (
+                                weight[pos[0] + i][pos[1] + j][pos[2] + k + 1]
+                                * reward_per_obj_placed
+                            )
+                        else:
+                            reward -= reward_per_obj_placed
+                            placement_failed = True
+
                         break
+
                     else:
                         dims[pos[0] + i][pos[1] + j][pos[2] + k] = 1
                         reward += (

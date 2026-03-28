@@ -22,16 +22,18 @@ class AppEnvironment(Environment):
         self._reset_count = 0
 
     def _new_state(self) -> AppState:
+        grid, placed = initGrid()
+
         return AppState(
             episode_id=str(uuid4()),
             step_count=0,
-            currentGrid=initGrid(),
+            currentGrid=grid,
             weightedGrid=initWeightedGrid(),
             objectsLeft=list(OBJECTS.keys()),
             objectsFound=[],
             reward=0.0,
             isDone=False,
-            ObjectsPresent={},
+            ObjectsPresent=placed,
         )
 
     def reset(self) -> AppObservation:
@@ -64,7 +66,7 @@ class AppEnvironment(Environment):
             self._state.isDone = True
             reward += 100
 
-        self._state.reward += reward / (10 ** self._state.step_count)
+        self._state.reward += reward / (10**self._state.step_count)
 
         return AppObservation(
             currentGrid=self._state.currentGrid,
