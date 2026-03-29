@@ -51,6 +51,11 @@ class AppObservation(Observation):
         description="List of reward values received after taking the action",
     )
 
+    numberPlaced: int = Field(
+        default=0,
+        description="Number of objects successfully placed in the environment",
+    )
+
 
 class AppState(State):
     """State for the App environment"""
@@ -91,4 +96,9 @@ class AppState(State):
     rewardList: list[float] = Field(
         default_factory=list,
         description="List of reward values received after taking the action",
+    )
+
+    numberPlaced: int = Field(
+        default=0,
+        description="Number of objects successfully placed in the environment",
     )

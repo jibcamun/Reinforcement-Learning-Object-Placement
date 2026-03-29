@@ -22,6 +22,7 @@ class AppEnvironment(Environment):
         self._reset_count = 0
 
     def _coerce_state(self) -> AppState:
+
         if isinstance(self._state, AppState):
             return self._state
 
@@ -48,6 +49,7 @@ class AppEnvironment(Environment):
             ObjectsPresent=placed,
             rewardFeedback=[],
             rewardList=[],
+            numberPlaced=0,
         )
 
     def reset(self) -> AppObservation:
@@ -62,6 +64,7 @@ class AppEnvironment(Environment):
             isDone=self._state.isDone,
             rewardFeedback=self._state.rewardFeedback,
             rewardList=self._state.rewardList,
+            numberPlaced=self._state.numberPlaced,
         )
 
     def step(self, action: AppAction) -> AppObservation:
@@ -89,6 +92,7 @@ class AppEnvironment(Environment):
                 isDone=state.isDone,
                 rewardFeedback=state.rewardFeedback,
                 rewardList=state.rewardList,
+                numberPlaced=state.numberPlaced,
             )
 
         if action.isSegmentation and action is not None:
@@ -103,7 +107,7 @@ class AppEnvironment(Environment):
             reward += findobject(action.isSegmentation, action.findObjects, state)
             appendRewardFeedback(state, "Object found successfully.", reward)
 
-        if len(state.objectsLeft) == 0:
+        if len(state.objectsLeft) == 0 and state.ObjectsPresent == state.numberPlaced:
             state.isDone = True
             reward += 10.0
             appendRewardFeedback(state, "All objects found. Episode completed!", reward)
@@ -119,6 +123,7 @@ class AppEnvironment(Environment):
             isDone=state.isDone,
             rewardFeedback=state.rewardFeedback,
             rewardList=state.rewardList,
+            numberPlaced=state.numberPlaced,
         )
 
     @property

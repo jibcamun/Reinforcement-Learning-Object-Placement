@@ -30,6 +30,7 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             isDone=obs_data.get("isDone", False),
             rewardFeedback=obs_data.get("rewardFeedback", []),
             rewardList=obs_data.get("rewardList", []),
+            numberPlaced=obs_data.get("numberPlaced", 0),
         )
 
         return StepResult(
@@ -52,4 +53,5 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             ObjectsPresent=payload.get("ObjectsPresent", {}),
             rewardFeedback=payload.get("rewardFeedback", []),
             rewardList=payload.get("rewardList", []),
+            numberPlaced=payload.get("numberPlaced", 0),
         )

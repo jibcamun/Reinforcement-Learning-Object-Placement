@@ -124,7 +124,7 @@ def initGrid():
 
 def initWeightedGrid(shape=None):
     if shape is None:
-        shape = (randint(5, 11), randint(5, 11), randint(5, 11))
+        shape = (randint(8, 12), randint(8, 12), randint(8, 12))
 
     grid = random.uniform(0, 1, shape)
 
@@ -155,6 +155,7 @@ def _get_weight_value(weight, x, y, z):
 
 
 def place(segment, objects, state):
+    state.numberPlaced = 0
     dims = state.currentGrid
     weight = state.weightedGrid
     reward = 0.0
@@ -226,6 +227,7 @@ def place(segment, objects, state):
                                 f"Object '{obj_name}' placed with stacking. Bonus: {bonus:.2f}",
                                 bonus,
                             )
+                            state.numberPlaced += 1
                         else:
                             reward -= reward_per_obj_placed
                             appendRewardFeedback(
@@ -248,6 +250,7 @@ def place(segment, objects, state):
                             f"Object '{obj_name}' placed successfully. Bonus: {bonus:.2f}",
                             bonus,
                         )
+                        state.numberPlaced += 1
                 if placement_failed:
                     break
             if placement_failed:
@@ -264,6 +267,14 @@ def findobject(segment, objects, state):
     if not segment or segment is None:
         appendRewardFeedback(
             state, "Finding objects without segmentation is not allowed.", -60.0
+        )
+        return -60.0
+
+    if state.ObjectsPresent == state.objectsFound:
+        appendRewardFeedback(
+            state,
+            "No point in finding more objects as all are already found Make the IsSegement attribute false and execute the place method.",
+            -60.0,
         )
         return -60.0
 

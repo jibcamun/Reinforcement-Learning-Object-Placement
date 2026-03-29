@@ -15,6 +15,11 @@ try:
 except ImportError:
     from app.server.app_environment import AppEnvironment
 
+try:
+    from grader import *
+except ImportError:
+    from app.grader import *
+
 
 load_dotenv()
 
@@ -125,7 +130,9 @@ def main() -> None:
             )
             if not value
         ]
-        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+        raise RuntimeError(
+            f"Missing required environment variables: {', '.join(missing)}"
+        )
 
     env = AppEnvironment()
     observation: AppObservation = env.reset()
@@ -153,17 +160,17 @@ def main() -> None:
         )
 
         message_content = llm_output.choices[0].message.content or ""
+
         action: AppAction = parse_output(message_content)
-        MESSAGES.append({"role": "assistant", "content": message_content})
         observation: AppObservation = env.step(action)
 
+        MESSAGES.append({"role": "assistant", "content": message_content})
         HISTORY.append(observation)
 
         if observation.isDone:
             break
-        
-        time.sleep(100)
-        
+
+
     print(HISTORY)
 
 
