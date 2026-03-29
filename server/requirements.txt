@@ -4,3 +4,4 @@ uvicorn
 numpy
 scikit-learn
 matplotlib
+python-dotenv
