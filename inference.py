@@ -21,9 +21,8 @@ MODEL = os.getenv("MODEL_NAME")
 API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
 MAX_STEPS = 8
-MAX_DOM_CHARS = 3500
 TEMPERATURE = 0.2
-MAX_TOKENS = 200
+MAX_TOKENS = 500
 FALLBACK_ACTION = "findObjects()"
 
 DEBUG = True
@@ -109,16 +108,18 @@ def main() -> None:
                     Step: {i}""".strip(),
             }
         )
-        
-        
 
-    llm_output = client.chat.completions.create(
-        model=MODEL,
-        messages=MESSAGES,
-        max_tokens=500,
-    )
+        llm_output = client.chat.completions.create(
+            model=MODEL,
+            messages=MESSAGES,
+            max_tokens=MAX_TOKENS,
+            temperature=TEMPERATURE,
+        )
 
-    action: AppAction = parse_llm_output(llm_output.choices[0].message.content)
+        action: AppAction = parse_output(llm_output.choices[0].message.content)
+        observation: AppObservation = env.step(action)
+
+        HISTORY.append(observation)
 
 
 if __name__ == "__main__":
