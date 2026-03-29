@@ -1,12 +1,9 @@
-from cycler import K
 from matplotlib.pylab import randint
 from numpy import ones, zeros, random
-from openai import NoneType
-from openenv.core.env_server.types import State
 from sklearn.metrics import mean_squared_error as MSE
 
-random.seed(123)
 
+random.seed(123)
 
 OBJECTS = {
     "book": {"dims": [4, 4, 2], "stack": True},
@@ -49,6 +46,11 @@ OBJECT_NAMES = [
     "backpack",
     "pouch",
 ]
+
+
+def appendRewardFeedback(state, feedback, reward):
+    state.rewardFeedback.append(feedback)
+    state.rewardList.append(reward)
 
 
 def initDimentions(obj):
@@ -140,11 +142,17 @@ def place(segment, objects, state):
     reward_per_obj_placed = 45.0 / totalObjs
 
     if segment:
+        appendRewardFeedback(
+            state, "Placing objects without segmentation is not allowed.", -60.0
+        )
         return -60.0
 
     for obj_name, pos in objects.items():
         obj = OBJECTS.get(obj_name)
         if obj is None:
+            appendRewardFeedback(
+                state, f"Object '{obj_name}' is not recognized.", -reward_per_obj_placed
+            )
             reward -= reward_per_obj_placed
             continue
 
@@ -160,11 +168,21 @@ def place(segment, objects, state):
                         or pos[2] + k >= len(dims[0][0])
                     ):
                         reward -= reward_per_obj_placed
+                        appendRewardFeedback(
+                            state,
+                            f"Object '{obj_name}' placement is out of bounds.",
+                            -reward_per_obj_placed,
+                        )
                         placement_failed = True
                         break
 
                     if dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0 and pos[3] == False:
                         reward -= reward_per_obj_placed
+                        appendRewardFeedback(
+                            state,
+                            f"Object '{obj_name}' placement overlaps with another object and stacking is not allowed.",
+                            -reward_per_obj_placed,
+                        )
                         placement_failed = True
                         break
 
@@ -177,8 +195,19 @@ def place(segment, objects, state):
                                 weight[pos[0] + i][pos[1] + j][pos[2] + k + 1]
                                 * reward_per_obj_placed
                             )
+                            appendRewardFeedback(
+                                state,
+                                f"Object '{obj_name}' placed with stacking. Bonus: {weight[pos[0] + i][pos[1] + j][pos[2] + k + 1] * reward_per_obj_placed:.2f}",
+                                weight[pos[0] + i][pos[1] + j][pos[2] + k + 1]
+                                * reward_per_obj_placed,
+                            )
                         else:
                             reward -= reward_per_obj_placed
+                            appendRewardFeedback(
+                                state,
+                                f"Object '{obj_name}' placement failed. No space for stacking.",
+                                -reward_per_obj_placed,
+                            )
                             placement_failed = True
 
                         break
@@ -188,6 +217,12 @@ def place(segment, objects, state):
                         reward += (
                             reward_per_obj_placed
                             * weight[pos[0] + i][pos[1] + j][pos[2] + k]
+                        )
+                        appendRewardFeedback(
+                            state,
+                            f"Object '{obj_name}' placed successfully. Bonus: {weight[pos[0] + i][pos[1] + j][pos[2] + k] * reward_per_obj_placed:.2f}",
+                            weight[pos[0] + i][pos[1] + j][pos[2] + k]
+                            * reward_per_obj_placed,
                         )
                 if placement_failed:
                     break
@@ -203,6 +238,9 @@ def place(segment, objects, state):
 def findobject(segment, objects, state):
 
     if not segment:
+        appendRewardFeedback(
+            state, "Finding objects without segmentation is not allowed.", -60.0
+        )
         return -60.0
 
     reward = 0.0
@@ -212,19 +250,42 @@ def findobject(segment, objects, state):
         pos_real = state.ObjectsPresent.get(obj_found)
         if pos_real is None:
             reward -= glMetric
+            appendRewardFeedback(
+                state, f"Object '{obj_found}' not found in the environment.", -glMetric
+            )
             continue
 
         if pos_found == pos_real:
             reward += glMetric
+            appendRewardFeedback(
+                state,
+                f"Object '{obj_found}' found with correct position and stacking.",
+                glMetric,
+            )
             objs.append(obj_found)
         else:
             mse = MSE(pos_real[:3], pos_found[:3])
             reward -= mse
+            appendRewardFeedback(
+                state,
+                f"Object '{obj_found}' found with incorrect position. MSE: {mse:.2f}",
+                -mse,
+            )
 
         if pos_found[3] != pos_real[3]:
             reward -= glMetric / 4.0
+            appendRewardFeedback(
+                state,
+                f"Object '{obj_found}' found with incorrect stacking. Penalty: {glMetric / 4.0}",
+                -glMetric / 4.0,
+            )
         else:
             reward += glMetric / 4.0
+            appendRewardFeedback(
+                state,
+                f"Object '{obj_found}' found with correct stacking. Bonus: {glMetric / 4.0}",
+                glMetric / 4.0,
+            )
 
     for obj in objs:
         state.objectsLeft.remove(obj)

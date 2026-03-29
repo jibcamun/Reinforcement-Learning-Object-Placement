@@ -41,6 +41,16 @@ class AppObservation(Observation):
     )
     isDone: bool = Field(default=False, description="Whether the episode has ended")
 
+    rewardFeedback: list[str] = Field(
+        default_factory=list,
+        description="List of feedback strings describing the reward received after taking the action",
+    )
+
+    rewardList: list[float] = Field(
+        default_factory=list,
+        description="List of reward values received after taking the action",
+    )
+
 
 class AppState(State):
     """State for the App environment"""
@@ -71,4 +81,14 @@ class AppState(State):
     ObjectsPresent: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict,
         description="Placed objects and their current positions in the environment",
+    )
+
+    rewardFeedback: list[str] = Field(
+        default_factory=list,
+        description="List of feedback strings describing the reward received after taking the action",
+    )
+
+    rewardList: list[float] = Field(
+        default_factory=list,
+        description="List of reward values received after taking the action",
     )

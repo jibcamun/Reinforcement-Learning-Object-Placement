@@ -34,6 +34,8 @@ class AppEnvironment(Environment):
             reward=0.0,
             isDone=False,
             ObjectsPresent=placed,
+            rewardFeedback=[],
+            rewardList=[],
         )
 
     def reset(self) -> AppObservation:
@@ -46,6 +48,8 @@ class AppEnvironment(Environment):
             objectsFound=self._state.objectsFound,
             reward=self._state.reward,
             isDone=self._state.isDone,
+            rewardFeedback=self._state.rewardFeedback,
+            rewardList=self._state.rewardList,
         )
 
     def step(self, action: AppAction) -> AppObservation:
@@ -57,16 +61,22 @@ class AppEnvironment(Environment):
         reward = 0.0
         if action.isSegmentation:
             reward += 10.0
+            appendRewardFeedback(self._state, "Segmentation successful.", reward)
 
         if action.placement:
             reward += place(action.isSegmentation, action.placement, self._state)
+            appendRewardFeedback(self._state, "Object placed successfully.", reward)
 
         if action.findObjects:
             reward += findobject(action.isSegmentation, action.findObjects, self._state)
+            appendRewardFeedback(self._state, "Object found successfully.", reward)
 
         if len(self._state.objectsLeft) == 0:
             self._state.isDone = True
             reward += 10.0
+            appendRewardFeedback(
+                self._state, "All objects found. Episode completed!", reward
+            )
 
         self._state.reward += reward / (10**self._state.step_count)
 
@@ -77,6 +87,8 @@ class AppEnvironment(Environment):
             objectsFound=self._state.objectsFound,
             reward=self._state.reward,
             isDone=self._state.isDone,
+            rewardFeedback=self._state.rewardFeedback,
+            rewardList=self._state.rewardList,
         )
 
     @property
