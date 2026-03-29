@@ -138,6 +138,9 @@ def initWeightedGrid(shape=None):
 
 
 def _get_weight_value(weight, x, y, z):
+    if not weight or not weight[0] or not weight[0][0]:
+        return 0.0
+
     if (
         x < 0
         or y < 0
@@ -236,11 +239,8 @@ def place(segment, objects, state):
 
                     else:
                         dims[pos[0] + i][pos[1] + j][pos[2] + k] = 1
-                        bonus = (
-                            reward_per_obj_placed
-                            * _get_weight_value(
-                                weight, pos[0] + i, pos[1] + j, pos[2] + k
-                            )
+                        bonus = reward_per_obj_placed * _get_weight_value(
+                            weight, pos[0] + i, pos[1] + j, pos[2] + k
                         )
                         reward += bonus
                         appendRewardFeedback(

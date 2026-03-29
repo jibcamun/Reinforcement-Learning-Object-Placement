@@ -28,6 +28,8 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             objectsFound=obs_data.get("objectsFound", []),
             reward=obs_data.get("reward", 0.0),
             isDone=obs_data.get("isDone", False),
+            rewardFeedback=obs_data.get("rewardFeedback", []),
+            rewardList=obs_data.get("rewardList", []),
         )
 
         return StepResult(
@@ -48,4 +50,6 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             objectsLeft=payload.get("objectsLeft", []),
             objectsFound=payload.get("objectsFound", []),
             ObjectsPresent=payload.get("ObjectsPresent", {}),
+            rewardFeedback=payload.get("rewardFeedback", []),
+            rewardList=payload.get("rewardList", []),
         )

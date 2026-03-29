@@ -21,6 +21,17 @@ class AppEnvironment(Environment):
         self._state = self._new_state()
         self._reset_count = 0
 
+    def _coerce_state(self) -> AppState:
+        if isinstance(self._state, AppState):
+            return self._state
+
+        if isinstance(self._state, dict):
+            self._state = AppState(**self._state)
+            return self._state
+
+        self._state = self._new_state()
+        return self._state
+
     def _new_state(self) -> AppState:
         grid, placed = initGrid()
         grid_shape = (len(grid), len(grid[0]), len(grid[0][0]))
@@ -30,7 +41,7 @@ class AppEnvironment(Environment):
             step_count=0,
             currentGrid=grid,
             weightedGrid=initWeightedGrid(grid_shape),
-            objectsLeft=list(OBJECTS.keys()),
+            objectsLeft=list(placed.keys()),
             objectsFound=[],
             reward=0.0,
             isDone=False,
@@ -54,63 +65,63 @@ class AppEnvironment(Environment):
         )
 
     def step(self, action: AppAction) -> AppObservation:
-        if not isinstance(self._state, AppState):
-            self._state = self._new_state()
+        state = self._coerce_state()
 
-        self._state.step_count += 1
+        if isinstance(action, dict):
+            action = AppAction(**action)
 
+        state.step_count += 1
         reward = 0.0
 
         if action is None:
             reward -= 10.0
             appendRewardFeedback(
-                self._state,
+                state,
                 "No action is of invalid schema or format. Penalty applied.",
                 reward,
             )
             return AppObservation(
-                currentGrid=self._state.currentGrid,
-                positions=self._state.ObjectsPresent,
-                objectsLeft=self._state.objectsLeft,
-                objectsFound=self._state.objectsFound,
-                reward=self._state.reward,
-                isDone=self._state.isDone,
-                rewardFeedback=self._state.rewardFeedback,
-                rewardList=self._state.rewardList,
+                currentGrid=state.currentGrid,
+                positions=state.ObjectsPresent,
+                objectsLeft=state.objectsLeft,
+                objectsFound=state.objectsFound,
+                reward=state.reward,
+                isDone=state.isDone,
+                rewardFeedback=state.rewardFeedback,
+                rewardList=state.rewardList,
             )
 
         if action.isSegmentation and action is not None:
             reward += 10.0
-            appendRewardFeedback(self._state, "Segmentation successful.", reward)
+            appendRewardFeedback(state, "Segmentation successful.", reward)
 
         if action.placement and action is not None:
-            reward += place(action.isSegmentation, action.placement, self._state)
-            appendRewardFeedback(self._state, "Object placed successfully.", reward)
+            reward += place(action.isSegmentation, action.placement, state)
+            appendRewardFeedback(state, "Object placed successfully.", reward)
 
         if action.findObjects and action is not None:
-            reward += findobject(action.isSegmentation, action.findObjects, self._state)
-            appendRewardFeedback(self._state, "Object found successfully.", reward)
+            reward += findobject(action.isSegmentation, action.findObjects, state)
+            appendRewardFeedback(state, "Object found successfully.", reward)
 
-        if len(self._state.objectsLeft) == 0:
-            self._state.isDone = True
+        if len(state.objectsLeft) == 0:
+            state.isDone = True
             reward += 10.0
-            appendRewardFeedback(
-                self._state, "All objects found. Episode completed!", reward
-            )
+            appendRewardFeedback(state, "All objects found. Episode completed!", reward)
 
-        self._state.reward += reward / (10**self._state.step_count)
+        state.reward += reward / (10**state.step_count)
 
         return AppObservation(
-            currentGrid=self._state.currentGrid,
-            positions=self._state.ObjectsPresent,
-            objectsLeft=self._state.objectsLeft,
-            objectsFound=self._state.objectsFound,
-            reward=self._state.reward,
-            isDone=self._state.isDone,
-            rewardFeedback=self._state.rewardFeedback,
-            rewardList=self._state.rewardList,
+            currentGrid=state.currentGrid,
+            positions=state.ObjectsPresent,
+            objectsLeft=state.objectsLeft,
+            objectsFound=state.objectsFound,
+            reward=state.reward,
+            isDone=state.isDone,
+            rewardFeedback=state.rewardFeedback,
+            rewardList=state.rewardList,
         )
 
     @property
     def state(self) -> dict:
-        return self._state.model_dump()
+        state = self._coerce_state()
+        return state.model_dump()
