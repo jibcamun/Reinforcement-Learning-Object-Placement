@@ -122,8 +122,11 @@ def initGrid():
     return (grid, placed)
 
 
-def initWeightedGrid():
-    grid = random.uniform(0, 1, (randint(5, 11), randint(5, 11), randint(5, 11)))
+def initWeightedGrid(shape=None):
+    if shape is None:
+        shape = (randint(5, 11), randint(5, 11), randint(5, 11))
+
+    grid = random.uniform(0, 1, shape)
 
     x_mid = grid.shape[0] // 2
     x_span = grid.shape[0] // 4
@@ -134,6 +137,20 @@ def initWeightedGrid():
     return grid
 
 
+def _get_weight_value(weight, x, y, z):
+    if (
+        x < 0
+        or y < 0
+        or z < 0
+        or x >= len(weight)
+        or y >= len(weight[0])
+        or z >= len(weight[0][0])
+    ):
+        return 0.0
+
+    return weight[x][y][z]
+
+
 def place(segment, objects, state):
     dims = state.currentGrid
     weight = state.weightedGrid
@@ -141,7 +158,7 @@ def place(segment, objects, state):
     totalObjs = len(objects)
     reward_per_obj_placed = 45.0 / totalObjs
 
-    if segment:
+    if segment or segment is None:
         appendRewardFeedback(
             state, "Placing objects without segmentation is not allowed.", -60.0
         )
@@ -189,17 +206,22 @@ def place(segment, objects, state):
                     elif (
                         dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0 and pos[3] == True
                     ):
-                        if pos[2] + k + 1 <= len(objGrid[0][0]):
+                        if pos[2] + k + 1 < len(dims[0][0]):
                             dims[pos[0] + i][pos[1] + j][pos[2] + k + 1] += 1
-                            reward += (
-                                weight[pos[0] + i][pos[1] + j][pos[2] + k + 1]
+                            bonus = (
+                                _get_weight_value(
+                                    weight,
+                                    pos[0] + i,
+                                    pos[1] + j,
+                                    pos[2] + k + 1,
+                                )
                                 * reward_per_obj_placed
                             )
+                            reward += bonus
                             appendRewardFeedback(
                                 state,
-                                f"Object '{obj_name}' placed with stacking. Bonus: {weight[pos[0] + i][pos[1] + j][pos[2] + k + 1] * reward_per_obj_placed:.2f}",
-                                weight[pos[0] + i][pos[1] + j][pos[2] + k + 1]
-                                * reward_per_obj_placed,
+                                f"Object '{obj_name}' placed with stacking. Bonus: {bonus:.2f}",
+                                bonus,
                             )
                         else:
                             reward -= reward_per_obj_placed
@@ -214,15 +236,17 @@ def place(segment, objects, state):
 
                     else:
                         dims[pos[0] + i][pos[1] + j][pos[2] + k] = 1
-                        reward += (
+                        bonus = (
                             reward_per_obj_placed
-                            * weight[pos[0] + i][pos[1] + j][pos[2] + k]
+                            * _get_weight_value(
+                                weight, pos[0] + i, pos[1] + j, pos[2] + k
+                            )
                         )
+                        reward += bonus
                         appendRewardFeedback(
                             state,
-                            f"Object '{obj_name}' placed successfully. Bonus: {weight[pos[0] + i][pos[1] + j][pos[2] + k] * reward_per_obj_placed:.2f}",
-                            weight[pos[0] + i][pos[1] + j][pos[2] + k]
-                            * reward_per_obj_placed,
+                            f"Object '{obj_name}' placed successfully. Bonus: {bonus:.2f}",
+                            bonus,
                         )
                 if placement_failed:
                     break
@@ -237,7 +261,7 @@ def place(segment, objects, state):
 
 def findobject(segment, objects, state):
 
-    if not segment:
+    if not segment or segment is None:
         appendRewardFeedback(
             state, "Finding objects without segmentation is not allowed.", -60.0
         )

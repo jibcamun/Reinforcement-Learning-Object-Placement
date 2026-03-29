@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import json
+from json import JSONDecodeError
+import time
 
 try:
     from models import AppAction, AppObservation
@@ -22,8 +24,11 @@ API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
 MAX_STEPS = 8
 TEMPERATURE = 0.2
-MAX_TOKENS = 500
-FALLBACK_ACTION = "findObjects()"
+FALLBACK_ACTION = {
+    "isSegmentation": False,
+    "placement": {},
+    "findObjects": {},
+}
 
 DEBUG = True
 
@@ -39,9 +44,9 @@ SYSTEM_PROMPT = """
 
         AppAction:
         {
-            placement: Dict[str, Tuple[int, int, int, bool]]  # object_name -> (x, y, z, stackable)
+            placement: Dict[str, Tuple[int, int, int, bool]]
             isSegmentation: bool
-            findObjects: Dict[str, Tuple[int, int, int, bool]]  # object_name -> (x, y, z, stackable)
+            findObjects: Dict[str, Tuple[int, int, int, bool]] 
         }
 
         Rules:
@@ -63,13 +68,11 @@ SYSTEM_PROMPT = """
         - Learn from reward feedback to improve placement in future steps.
 
         Always return a valid JSON that conforms exactly to the AppAction Pydantic model:
-        - placement: Dict[str, Tuple[int,int,int,bool]] or null
-        - isSegmentation: bool
-        - findObjects: Dict[str, Tuple[int,int,int,bool]] or null
+        {"placement": Dict[str, Tuple[int,int,int,bool]] or {}, "isSegmentation": bool, "findObjects": Dict[str, Tuple[int,int,int,bool]] or {}}
         
         Actions:
-        - To place an object: {"isSegmentation": false, "placement": {"object_name": (x, y, z, stackable)}, "findObjects": {}}
-        - To segment objects: {"isSegmentation": true, "placement": {}, "findObjects": {"object_name": (x, y, z, stackable)}}
+        - To place an object: {"isSegmentation": false, "placement": {"object_name": [x, y, z, stackable]}, "findObjects": {}}
+        - To segment objects: {"isSegmentation": true, "placement": {}, "findObjects": {"object_name": [x, y, z, stackable]}}
         
         Do not include explanations, text, or extra fields.
         If no objects are found or placed, return empty dicts for placement and findObjects.
@@ -80,16 +83,50 @@ MESSAGES = [{"role": "system", "content": SYSTEM_PROMPT}]
 HISTORY = []
 
 
+def _fallback_action() -> AppAction:
+    return AppAction(**FALLBACK_ACTION)
+
+
+def _extract_json_payload(output_str: str) -> str:
+    output_str = output_str.strip()
+
+    if output_str.startswith("```"):
+        lines = output_str.splitlines()
+        if len(lines) >= 3:
+            output_str = "\n".join(lines[1:-1]).strip()
+
+    start = output_str.find("{")
+    end = output_str.rfind("}")
+
+    if start == -1 or end == -1 or end < start:
+        raise JSONDecodeError("No JSON object found in model output", output_str, 0)
+
+    return output_str[start : end + 1]
+
+
 def parse_output(output_str: str) -> AppAction:
     try:
-        data = json.loads(output_str)
-        action = AppAction(**data)
-        return action
-    except:
-        print("Invalid Output")
+        data = json.loads(_extract_json_payload(output_str))
+        return AppAction(**data)
+    except (JSONDecodeError, TypeError, ValueError) as exc:
+        print(f"Invalid Output: {exc}")
+        print(f"Raw model output: {output_str!r}")
+        return _fallback_action()
 
 
 def main() -> None:
+    if not API_URL or not MODEL or not API_KEY:
+        missing = [
+            name
+            for name, value in (
+                ("API_BASE_URL", API_URL),
+                ("MODEL_NAME", MODEL),
+                ("API_KEY/HF_TOKEN", API_KEY),
+            )
+            if not value
+        ]
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+
     env = AppEnvironment()
     observation: AppObservation = env.reset()
 
@@ -112,14 +149,22 @@ def main() -> None:
         llm_output = client.chat.completions.create(
             model=MODEL,
             messages=MESSAGES,
-            max_tokens=MAX_TOKENS,
             temperature=TEMPERATURE,
         )
 
-        action: AppAction = parse_output(llm_output.choices[0].message.content)
+        message_content = llm_output.choices[0].message.content or ""
+        action: AppAction = parse_output(message_content)
+        MESSAGES.append({"role": "assistant", "content": message_content})
         observation: AppObservation = env.step(action)
 
         HISTORY.append(observation)
+
+        if observation.isDone:
+            break
+        
+        time.sleep(100)
+        
+    print(HISTORY)
 
 
 if __name__ == "__main__":

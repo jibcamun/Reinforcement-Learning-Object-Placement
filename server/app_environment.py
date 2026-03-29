@@ -23,12 +23,13 @@ class AppEnvironment(Environment):
 
     def _new_state(self) -> AppState:
         grid, placed = initGrid()
+        grid_shape = (len(grid), len(grid[0]), len(grid[0][0]))
 
         return AppState(
             episode_id=str(uuid4()),
             step_count=0,
             currentGrid=grid,
-            weightedGrid=initWeightedGrid(),
+            weightedGrid=initWeightedGrid(grid_shape),
             objectsLeft=list(OBJECTS.keys()),
             objectsFound=[],
             reward=0.0,
@@ -59,15 +60,34 @@ class AppEnvironment(Environment):
         self._state.step_count += 1
 
         reward = 0.0
-        if action.isSegmentation:
+
+        if action is None:
+            reward -= 10.0
+            appendRewardFeedback(
+                self._state,
+                "No action is of invalid schema or format. Penalty applied.",
+                reward,
+            )
+            return AppObservation(
+                currentGrid=self._state.currentGrid,
+                positions=self._state.ObjectsPresent,
+                objectsLeft=self._state.objectsLeft,
+                objectsFound=self._state.objectsFound,
+                reward=self._state.reward,
+                isDone=self._state.isDone,
+                rewardFeedback=self._state.rewardFeedback,
+                rewardList=self._state.rewardList,
+            )
+
+        if action.isSegmentation and action is not None:
             reward += 10.0
             appendRewardFeedback(self._state, "Segmentation successful.", reward)
 
-        if action.placement:
+        if action.placement and action is not None:
             reward += place(action.isSegmentation, action.placement, self._state)
             appendRewardFeedback(self._state, "Object placed successfully.", reward)
 
-        if action.findObjects:
+        if action.findObjects and action is not None:
             reward += findobject(action.isSegmentation, action.findObjects, self._state)
             appendRewardFeedback(self._state, "Object found successfully.", reward)
 
