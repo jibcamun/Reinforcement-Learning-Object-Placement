@@ -132,12 +132,16 @@ def initWeightedGrid():
     return grid
 
 
-def place(objects, state):
+def place(segment, objects, state):
     dims = state.currentGrid
     weight = state.weightedGrid
     reward = 0.0
     totalObjs = len(objects)
-    reward_per_obj_placed = 90.0 / totalObjs
+    reward_per_obj_placed = 45.0 / totalObjs
+
+    if segment:
+        return -60.0
+
     for obj_name, pos in objects.items():
         obj = OBJECTS.get(obj_name)
         if obj is None:
@@ -196,26 +200,31 @@ def place(objects, state):
     return reward
 
 
-def findobject(objects, state):
+def findobject(segment, objects, state):
+
+    if not segment:
+        return -60.0
+
     reward = 0.0
+    glMetric = 45.0 / len(state.ObjectsPresent)
     objs = []
     for obj_found, pos_found in objects.items():
         pos_real = state.ObjectsPresent.get(obj_found)
         if pos_real is None:
-            reward -= 10.0
+            reward -= glMetric
             continue
 
         if pos_found == pos_real:
-            reward += 10.0
+            reward += glMetric
             objs.append(obj_found)
         else:
-            rmse = MSE(pos_real[:3], pos_found[:3])
-            reward -= rmse
+            mse = MSE(pos_real[:3], pos_found[:3])
+            reward -= mse
 
         if pos_found[3] != pos_real[3]:
-            reward -= 5.0
+            reward -= glMetric / 4.0
         else:
-            reward += 5.0
+            reward += glMetric / 4.0
 
     for obj in objs:
         state.objectsLeft.remove(obj)

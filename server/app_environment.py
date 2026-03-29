@@ -55,16 +55,18 @@ class AppEnvironment(Environment):
         self._state.step_count += 1
 
         reward = 0.0
+        if action.isSegmentation:
+            reward += 10.0
 
         if action.placement:
-            reward += place(action.placement, self._state)
+            reward += place(action.isSegmentation, action.placement, self._state)
 
         if action.findObjects:
-            reward += findobject(action.findObjects, self._state)
+            reward += findobject(action.isSegmentation, action.findObjects, self._state)
 
         if len(self._state.objectsLeft) == 0:
             self._state.isDone = True
-            reward += 100
+            reward += 10.0
 
         self._state.reward += reward / (10**self._state.step_count)
 
