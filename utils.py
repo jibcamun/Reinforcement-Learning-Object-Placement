@@ -277,7 +277,7 @@ def place(segment, objects, state):
 
                 continue
 
-    return reward
+    return (reward, placement_failed)
 
 
 def findobject(segment, objects, state):
@@ -372,6 +372,33 @@ def _remove_object(state, obj_name):
                     dims[pos[0] + i][pos[1] + j][pos[2] + k] -= 1
 
 
+def _adjustment_helper(state, name, pos, change, direction):
+    _remove_object(state, name)
+
+    if direction == "ROTATE":
+        newPos = (pos[1], pos[0], pos[2], pos[3])
+    else:
+        newPos = (pos[0] + change[0], pos[1] + change[1], pos[2] + change[2], pos[3])
+
+    reward, isNotPlaced = place(False, {name: newPos}, state)
+
+    if isNotPlaced:
+        dummyReward = place(False, {name: pos}, state)[0]
+        appendRewardFeedback(
+            state,
+            f"Failed to adjust object '{name}' in direction {direction}. Reverting to original position.",
+            -dummyReward,
+        )
+        return -dummyReward
+
+    appendRewardFeedback(
+        state,
+        f"Object '{name}' moved {direction} successfully.",
+        reward,
+    )
+    return reward
+
+
 def adjustment(segment, action, state):
     objsPlaced = state.ObjectsPlaced
 
@@ -394,74 +421,25 @@ def adjustment(segment, action, state):
         return -reward_per_obj_placed
 
     if action[1] == "RIGHT":
-        _remove_object(state, name)
-        newPos = (initPos[0] + 1, initPos[1], initPos[2], initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved right successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [1, 0, 0], "RIGHT")
         return reward
     elif action[1] == "LEFT":
-        _remove_object(state, name)
-        newPos = (initPos[0] - 1, initPos[1], initPos[2], initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved left successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [-1, 0, 0], "LEFT")
         return reward
     elif action[1] == "UP":
-        _remove_object(state, name)
-        newPos = (initPos[0], initPos[1] + 1, initPos[2], initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved up successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [0, 1, 0], "UP")
         return reward
     elif action[1] == "DOWN":
-        _remove_object(state, name)
-        newPos = (initPos[0], initPos[1] - 1, initPos[2], initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved down successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [0, -1, 0], "DOWN")
         return reward
     elif action[1] == "FORWARD":
-        _remove_object(state, name)
-        newPos = (initPos[0], initPos[1], initPos[2] + 1, initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved forward successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [0, 0, 1], "FORWARD")
         return reward
     elif action[1] == "BACKWARD":
-        _remove_object(state, name)
-        newPos = (initPos[0], initPos[1], initPos[2] - 1, initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' moved backward successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [0, 0, -1], "BACKWARD")
         return reward
     elif action[1] == "ROTATE":
-        _remove_object(state, name)
-        newPos = (initPos[0], initPos[2], initPos[1], initPos[3])
-        reward = place(segment, {name: newPos}, state)
-        appendRewardFeedback(
-            state,
-            f"Object '{name}' rotated successfully.",
-            reward,
-        )
+        reward = _adjustment_helper(state, name, initPos, [0, 0, 0], "ROTATE")
         return reward
     else:
         reward_per_obj_placed = 45.0 / len(state.ObjectsPresent)
