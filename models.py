@@ -18,29 +18,10 @@ class AppAction(Action):
         default_factory=dict, description="Dictionary of objects"
     )
 
-    # moveLeft: Tuple[str, int] = Field(
-    #    default_factory=tuple,
-    #    description="Move the object left by the specified amount",
-    # )
-
-    # moveRight: Tuple[str, int] = Field(
-    #    default_factory=tuple,
-    #    description="Move the object right by the specified amount",
-    # )
-
-    # moveUp: Tuple[str, int] = Field(
-    #    default_factory=tuple, description="Move the object up by the specified amount"
-    # )
-
-    # moveDown: Tuple[str, int] = Field(
-    #    default_factory=tuple,
-    #    description="Move the object down by the specified amount",
-    # )
-
-    # rotate: Tuple[str, int] = Field(
-    #    default_factory=tuple,
-    #    description="Rotate the object by the specified angle, transpose the matrix of the object",
-    # )
+    adjust: Tuple[str, str, int] = Field(
+        default=("", "", 0),
+        description="Adjustment action for moving or rotating objects. Format: (object_name, direction, amount)",
+    ) 
 
 
 class AppObservation(Observation):

@@ -163,9 +163,9 @@ def place(segment, objects, state):
     totalObjs = len(objects)
     reward_per_obj_placed = 45.0 / totalObjs
 
-    if segment or segment is None:
+    if segment:
         appendRewardFeedback(
-            state, "Placing objects without segmentation is not allowed.", -60.0
+            state, "Placing objects with segmentation is not allowed.", -60.0
         )
         return -60.0
 
@@ -347,3 +347,127 @@ def findobject(segment, objects, state):
     return reward
 
 
+def _remove_object(state, obj_name):
+    reward = 0
+    try:
+        pos = state.ObjectsPlaced.pop(obj_name)
+    except KeyError:
+        reward -= 45.0 / len(state.ObjectsPresent)
+        appendRewardFeedback(
+            state,
+            f"Object '{obj_name}' is not placed in the environment.",
+            -reward,
+        )
+        return reward
+
+    state.numberPlaced -= 1
+    dims = state.currentGrid
+    obj = OBJECTS.get(obj_name)
+    objGrid = initDimentions(obj)
+
+    for i in range(len(objGrid)):
+        for j in range(len(objGrid[0])):
+            for k in range(len(objGrid[0][0])):
+                if dims[pos[0] + i][pos[1] + j][pos[2] + k] > 0:
+                    dims[pos[0] + i][pos[1] + j][pos[2] + k] -= 1
+
+
+def adjustment(segment, action, state):
+    objsPlaced = state.ObjectsPlaced
+
+    if segment:
+        appendRewardFeedback(
+            state, "Placing objects with segmentation is not allowed.", -60.0
+        )
+        return -60.0
+
+    try:
+        initPos = objsPlaced[action[0]]
+        name = action[0]
+    except KeyError:
+        reward_per_obj_placed = 45.0 / len(state.ObjectsPresent)
+        appendRewardFeedback(
+            state,
+            f"Object '{action[0]}' is not placed in the environment, so it cannot be adjusted.",
+            -reward_per_obj_placed,
+        )
+        return -reward_per_obj_placed
+
+    if action[1] == "RIGHT":
+        _remove_object(state, name)
+        newPos = (initPos[0] + 1, initPos[1], initPos[2], initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved right successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "LEFT":
+        _remove_object(state, name)
+        newPos = (initPos[0] - 1, initPos[1], initPos[2], initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved left successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "UP":
+        _remove_object(state, name)
+        newPos = (initPos[0], initPos[1] + 1, initPos[2], initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved up successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "DOWN":
+        _remove_object(state, name)
+        newPos = (initPos[0], initPos[1] - 1, initPos[2], initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved down successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "FORWARD":
+        _remove_object(state, name)
+        newPos = (initPos[0], initPos[1], initPos[2] + 1, initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved forward successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "BACKWARD":
+        _remove_object(state, name)
+        newPos = (initPos[0], initPos[1], initPos[2] - 1, initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' moved backward successfully.",
+            reward,
+        )
+        return reward
+    elif action[1] == "ROTATE":
+        _remove_object(state, name)
+        newPos = (initPos[0], initPos[2], initPos[1], initPos[3])
+        reward = place(segment, {name: newPos}, state)
+        appendRewardFeedback(
+            state,
+            f"Object '{name}' rotated successfully.",
+            reward,
+        )
+        return reward
+    else:
+        reward_per_obj_placed = 45.0 / len(state.ObjectsPresent)
+        appendRewardFeedback(
+            state,
+            f"Invalid adjustment direction '{action[1]}'. Valid directions are RIGHT, LEFT, UP, DOWN, FORWARD, BACKWARD, ROTATE.",
+            -reward_per_obj_placed,
+        )
+        return -reward_per_obj_placed

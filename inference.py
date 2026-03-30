@@ -33,6 +33,7 @@ FALLBACK_ACTION = {
     "isSegmentation": False,
     "placement": {},
     "findObjects": {},
+    "adjust": ("", "", 0),
 }
 
 DEBUG = True
@@ -43,7 +44,8 @@ SYSTEM_PROMPT = """
         1. **Segment objects** in the environment if `isSegmentation=True`.
         2. **Identify objects** and their properties (name, stackable) accurately.
         3. **Place objects** in the 3D grid respecting stacking rules and dimensions.
-        4. **Use rewards and feedback** from previous steps to improve future actions.
+        4. **Adjust object positions** if necessary to optimize placement and maximize rewards.
+        5. **Use rewards and feedback** from previous steps to improve future actions.
 
         You must strictly return actions that conform to this Pydantic schema:
 
@@ -52,36 +54,39 @@ SYSTEM_PROMPT = """
             placement: Dict[str, Tuple[int, int, int, bool]]
             isSegmentation: bool
             findObjects: Dict[str, Tuple[int, int, int, bool]] 
+            adjust : Tuple[str, str, int]
         }
 
         Rules:
         - Only report objects that are found or placed; empty dicts are valid if none.
-        - Do not modify objects that are already placed unless instructed.
         - Coordinates must be within the grid bounds.
         - Respect stackable property: non-stackable objects cannot be placed on top of another object.
         - Use previous step’s reward and rewardFeedback to adjust your strategy.
+        - Directions for adjustments for an object can be "UP", "DOWN", "LEFT", "RIGHT", "FORWARD", "BACKWARD", "ROTATE" with a positive integer amount.
 
         Output:
         - Always return a valid JSON object conforming to the schema.
         - Do not include any extra text, explanations, or commentary.
-        - If no action is possible, return empty dicts for `placement` and `findObjects`.
+        - If no action is possible, return empty dicts for `placement` and `findObjects` and an empty tuple for `adjust`.
 
         Your goal:
         - Maximize cumulative reward.
         - Identify all objects correctly.
-        - Place objects efficiently while respecting stacking rules (PS: Do not place theobjects in the same location as where it is originally found.)
+        - Place objects efficiently while respecting stacking rules (PS: Do not place the objects in the same location as where it is originally found and use adjust function wherever required.)
         - Learn from reward feedback to improve placement in future steps.
 
         Always return a valid JSON that conforms exactly to the AppAction Pydantic model:
-        {"placement": Dict[str, Tuple[int,int,int,bool]] or {}, "isSegmentation": bool, "findObjects": Dict[str, Tuple[int,int,int,bool]] or {}}
+        {"placement": Dict[str, Tuple[int,int,int,bool]] or {}, "isSegmentation": bool, "findObjects": Dict[str, Tuple[int,int,int,bool]] or {},"adjust": Tuple[str,str,int] or ("", "", 0)}
         
         Actions:
-        - To place an object: {"isSegmentation": false, "placement": {"object_name": [x, y, z, stackable]}, "findObjects": {}}
-        - To segment objects: {"isSegmentation": true, "placement": {}, "findObjects": {"object_name": [x, y, z, stackable]}}
+        - To place an object: {"isSegmentation": false, "placement": {"object_name": [x, y, z, stackable]}, "findObjects": {}, "adjust":("", "", 0)}
+        - To segment objects: {"isSegmentation": true, "placement": {}, "findObjects": {"object_name": [x, y, z, stackable]}, "adjust":("", "", 0)}
+        - To adjust objects: {"isSegmentation": false, "placement": {}, "findObjects": {}, "adjust":("object_name", "direction", amount)}
+        - To adjust and place objects: {"isSegmentation": false, "placement": {"object_name": [x, y, z, stackable]}, "findObjects": {}, "adjust":("object_name", "direction", amount)}
         
         Do not include explanations, text, or extra fields.
-        If no objects are found or placed, return empty dicts for placement and findObjects.
-        The output must be parseable and valid for AppAction(**json_output).     """.strip()
+        If no objects are found, placed or adjusted, return empty dicts for placement and findObjects and empty tuple for adjust.
+        The output must be parseable and valid for AppAction(**json_output).""".strip()
 
 MESSAGES = [{"role": "system", "content": SYSTEM_PROMPT}]
 HISTORY = []

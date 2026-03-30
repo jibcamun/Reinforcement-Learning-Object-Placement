@@ -14,8 +14,14 @@ app_port: 8000
 # The Sorter Project 
 
 ## The Purpose 
-Building an environment to make AI models learn on how to **identify and sort** things which are placed in a *random* fashion.
+Building an environment to make AI models learn on how to **identify**, **place** and **adjust** the position of things in the environment which are scattered in a *random* fashion.
 
 ## Real life application
 
+## API Documentation
+
+
 ## Tools Used
+Visual Studio Code: IDE (to write code)
+Prettier More: Code Formatter (to make the code look good)
+autoDocstring: Python Docstring Generator (to make aid in the process of documentation)

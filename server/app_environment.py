@@ -106,6 +106,10 @@ class AppEnvironment(Environment):
             reward += place(action.isSegmentation, action.placement, state)
             appendRewardFeedback(state, "Object placed successfully.", reward)
 
+        if action.adjust and action is not None:
+            reward += adjustment(action.isSegmentation, action.adjust, state)
+            appendRewardFeedback(state, "Object found successfully.", reward)
+
         if action.findObjects and action is not None:
             reward += findobject(action.isSegmentation, action.findObjects, state)
             appendRewardFeedback(state, "Object found successfully.", reward)

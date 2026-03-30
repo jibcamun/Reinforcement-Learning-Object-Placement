@@ -16,11 +16,7 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             "placement": action.placement,
             "isSegmentation": action.isSegmentation,
             "findObjects": action.findObjects,
-            # "moveLeft": action.moveLeft,
-            # "moveRight": action.moveRight,
-            # "moveUp": action.moveUp,
-            # "moveDown": action.moveDown,
-            # "rotate": action.rotate,
+            "adjust": action.adjust,
         }
 
     def _parse_result(self, payload: Dict) -> StepResult[AppObservation]:
