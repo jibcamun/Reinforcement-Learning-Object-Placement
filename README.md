@@ -22,6 +22,6 @@ Building an environment to make AI models learn on how to **identify**, **place*
 
 
 ## Tools Used
-Visual Studio Code: IDE (to write code)
-Prettier More: Code Formatter (to make the code look good)
-autoDocstring: Python Docstring Generator (to make aid in the process of documentation)
+### Visual Studio Code: IDE (to write code)
+### Prettier More: Code Formatter (to make the code look good)
+### autoDocstring: Python Docstring Generator (to make aid in the process of documentation)
