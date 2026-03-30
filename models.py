@@ -9,12 +9,38 @@ class AppAction(Action):
     placement: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict, description="Placement of the object in a 3D grid"
     )
+
     isSegmentation: bool = Field(
         default=True, description="Whether the model is segmenting the objects"
     )
+
     findObjects: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict, description="Dictionary of objects"
     )
+
+    # moveLeft: Tuple[str, int] = Field(
+    #    default_factory=tuple,
+    #    description="Move the object left by the specified amount",
+    # )
+
+    # moveRight: Tuple[str, int] = Field(
+    #    default_factory=tuple,
+    #    description="Move the object right by the specified amount",
+    # )
+
+    # moveUp: Tuple[str, int] = Field(
+    #    default_factory=tuple, description="Move the object up by the specified amount"
+    # )
+
+    # moveDown: Tuple[str, int] = Field(
+    #    default_factory=tuple,
+    #    description="Move the object down by the specified amount",
+    # )
+
+    # rotate: Tuple[str, int] = Field(
+    #    default_factory=tuple,
+    #    description="Rotate the object by the specified angle, transpose the matrix of the object",
+    # )
 
 
 class AppObservation(Observation):
@@ -24,21 +50,26 @@ class AppObservation(Observation):
         default_factory=list,
         description="Current placement of the objects in a 3D grid",
     )
+
     positions: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict,
         description="Dictionary of objects with their positions in the environment",
     )
+
     objectsLeft: List[str] = Field(
         default_factory=list,
         description="List of unorganised objects left in the environment",
     )
+
     objectsFound: List[str] = Field(
         default_factory=list,
         description="List of objects found in the environment",
     )
+
     reward: float = Field(
         default=0.0, description="Reward received after taking the action"
     )
+
     isDone: bool = Field(default=False, description="Whether the episode has ended")
 
     rewardFeedback: list[str] = Field(
@@ -54,6 +85,11 @@ class AppObservation(Observation):
     numberPlaced: int = Field(
         default=0,
         description="Number of objects successfully placed in the environment",
+    )
+
+    ObjectsPlaced: Dict[str, Tuple[int, int, int, bool]] = Field(
+        default_factory=dict,
+        description="Objects that have been successfully placed in the environment",
     )
 
 
@@ -74,18 +110,26 @@ class AppState(State):
         default_factory=list,
         description="List of unorganised objects left in the environment",
     )
+
     objectsFound: List[str] = Field(
         default_factory=list,
         description="List of objects found in the environment",
     )
+
     reward: float = Field(
         default=0.0, description="Reward received after taking the action"
     )
+
     isDone: bool = Field(default=False, description="Whether the episode has ended")
 
     ObjectsPresent: Dict[str, Tuple[int, int, int, bool]] = Field(
         default_factory=dict,
         description="Placed objects and their current positions in the environment",
+    )
+
+    ObjectsPlaced: Dict[str, Tuple[int, int, int, bool]] = Field(
+        default_factory=dict,
+        description="Objects that have been successfully placed in the environment",
     )
 
     rewardFeedback: list[str] = Field(

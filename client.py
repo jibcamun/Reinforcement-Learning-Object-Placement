@@ -16,6 +16,11 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             "placement": action.placement,
             "isSegmentation": action.isSegmentation,
             "findObjects": action.findObjects,
+            # "moveLeft": action.moveLeft,
+            # "moveRight": action.moveRight,
+            # "moveUp": action.moveUp,
+            # "moveDown": action.moveDown,
+            # "rotate": action.rotate,
         }
 
     def _parse_result(self, payload: Dict) -> StepResult[AppObservation]:
@@ -31,6 +36,7 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             rewardFeedback=obs_data.get("rewardFeedback", []),
             rewardList=obs_data.get("rewardList", []),
             numberPlaced=obs_data.get("numberPlaced", 0),
+            ObjectsPlaced=obs_data.get("ObjectsPlaced", {}),
         )
 
         return StepResult(
@@ -54,4 +60,5 @@ class AppEnv(EnvClient[AppAction, AppObservation, AppState]):
             rewardFeedback=payload.get("rewardFeedback", []),
             rewardList=payload.get("rewardList", []),
             numberPlaced=payload.get("numberPlaced", 0),
+            ObjectsPlaced=payload.get("ObjectsPlaced", {}),
         )

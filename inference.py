@@ -69,7 +69,7 @@ SYSTEM_PROMPT = """
         Your goal:
         - Maximize cumulative reward.
         - Identify all objects correctly.
-        - Place objects efficiently while respecting stacking rules.
+        - Place objects efficiently while respecting stacking rules (PS: Do not place theobjects in the same location as where it is originally found.)
         - Learn from reward feedback to improve placement in future steps.
 
         Always return a valid JSON that conforms exactly to the AppAction Pydantic model:
@@ -81,8 +81,7 @@ SYSTEM_PROMPT = """
         
         Do not include explanations, text, or extra fields.
         If no objects are found or placed, return empty dicts for placement and findObjects.
-        The output must be parseable and valid for AppAction(**json_output).
-    """.strip()
+        The output must be parseable and valid for AppAction(**json_output).     """.strip()
 
 MESSAGES = [{"role": "system", "content": SYSTEM_PROMPT}]
 HISTORY = []
@@ -155,7 +154,17 @@ def main() -> None:
 
         llm_output = client.chat.completions.create(
             model=MODEL,
-            messages=MESSAGES,
+            messages=[
+                MESSAGES[0],
+                {
+                    "role": "user",
+                    "content": f"""Observation: {observation.model_dump_json()}, 
+                    Previous reward: {observation.reward}, 
+                    Previous reward list: {observation.rewardList}, 
+                    Previous reward feedback: {observation.rewardFeedback}, 
+                    Step: {i}""".strip(),
+                },
+            ],
             temperature=TEMPERATURE,
         )
 
@@ -165,11 +174,12 @@ def main() -> None:
         observation: AppObservation = env.step(action)
 
         MESSAGES.append({"role": "assistant", "content": message_content})
+        print(message_content)
         HISTORY.append(observation)
+        print(observation)
 
         if observation.isDone:
             break
-
 
     print(HISTORY)
 

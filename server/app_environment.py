@@ -47,6 +47,7 @@ class AppEnvironment(Environment):
             reward=0.0,
             isDone=False,
             ObjectsPresent=placed,
+            ObjectsPlaced={},
             rewardFeedback=[],
             rewardList=[],
             numberPlaced=0,
@@ -65,6 +66,7 @@ class AppEnvironment(Environment):
             rewardFeedback=self._state.rewardFeedback,
             rewardList=self._state.rewardList,
             numberPlaced=self._state.numberPlaced,
+            ObjectsPlaced=self._state.ObjectsPlaced,
         )
 
     def step(self, action: AppAction) -> AppObservation:
@@ -93,6 +95,7 @@ class AppEnvironment(Environment):
                 rewardFeedback=state.rewardFeedback,
                 rewardList=state.rewardList,
                 numberPlaced=state.numberPlaced,
+                ObjectsPlaced=state.ObjectsPlaced,
             )
 
         if action.isSegmentation and action is not None:
@@ -124,6 +127,7 @@ class AppEnvironment(Environment):
             rewardFeedback=state.rewardFeedback,
             rewardList=state.rewardList,
             numberPlaced=state.numberPlaced,
+            ObjectsPlaced=state.ObjectsPlaced,
         )
 
     @property

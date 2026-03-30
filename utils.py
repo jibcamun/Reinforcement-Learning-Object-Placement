@@ -155,9 +155,10 @@ def _get_weight_value(weight, x, y, z):
 
 
 def place(segment, objects, state):
-    state.numberPlaced = 0
     dims = state.currentGrid
     weight = state.weightedGrid
+    objsPresent = state.ObjectsPresent
+
     reward = 0.0
     totalObjs = len(objects)
     reward_per_obj_placed = 45.0 / totalObjs
@@ -169,6 +170,7 @@ def place(segment, objects, state):
         return -60.0
 
     for obj_name, pos in objects.items():
+
         obj = OBJECTS.get(obj_name)
         if obj is None:
             appendRewardFeedback(
@@ -227,7 +229,6 @@ def place(segment, objects, state):
                                 f"Object '{obj_name}' placed with stacking. Bonus: {bonus:.2f}",
                                 bonus,
                             )
-                            state.numberPlaced += 1
                         else:
                             reward -= reward_per_obj_placed
                             appendRewardFeedback(
@@ -250,14 +251,31 @@ def place(segment, objects, state):
                             f"Object '{obj_name}' placed successfully. Bonus: {bonus:.2f}",
                             bonus,
                         )
-                        state.numberPlaced += 1
                 if placement_failed:
                     break
             if placement_failed:
                 break
 
         if not placement_failed:
-            state.ObjectsPresent[obj_name] = pos
+            state.ObjectsPlaced[obj_name] = pos
+            state.numberPlaced += 1
+            try:
+                if objsPresent[obj_name] == state.ObjectsPlaced[obj_name]:
+                    reward -= 45.0 / totalObjs
+                    appendRewardFeedback(
+                        state,
+                        f"Object '{obj_name}' is being placed in the same location",
+                        -reward_per_obj_placed,
+                    )
+            except KeyError:
+                reward -= reward_per_obj_placed
+                appendRewardFeedback(
+                    state,
+                    f"Object '{obj_name}' is present in the environment, but is placed in same location as originally found.",
+                    -reward_per_obj_placed,
+                )
+
+                continue
 
     return reward
 
@@ -327,3 +345,5 @@ def findobject(segment, objects, state):
         state.objectsFound.append(obj)
 
     return reward
+
+
